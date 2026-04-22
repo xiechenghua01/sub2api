@@ -1038,27 +1038,27 @@ func TestNormalizeToolParameters(t *testing.T) {
 		{
 			name:     "nil input",
 			input:    nil,
-			expected: `{"type":"object","properties":{}}`,
+			expected: `{"type":"object","properties":{},"required":[]}`,
 		},
 		{
 			name:     "empty input",
 			input:    json.RawMessage(``),
-			expected: `{"type":"object","properties":{}}`,
+			expected: `{"type":"object","properties":{},"required":[]}`,
 		},
 		{
 			name:     "null input",
 			input:    json.RawMessage(`null`),
-			expected: `{"type":"object","properties":{}}`,
+			expected: `{"type":"object","properties":{},"required":[]}`,
 		},
 		{
 			name:     "object without properties",
 			input:    json.RawMessage(`{"type":"object"}`),
-			expected: `{"type":"object","properties":{}}`,
+			expected: `{"type":"object","properties":{},"required":[]}`,
 		},
 		{
 			name:     "object with properties",
 			input:    json.RawMessage(`{"type":"object","properties":{"city":{"type":"string"}}}`),
-			expected: `{"type":"object","properties":{"city":{"type":"string"}}}`,
+			expected: `{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}`,
 		},
 		{
 			name:     "non-object type",
@@ -1133,5 +1133,5 @@ func TestAnthropicToResponses_ToolWithNilSchema(t *testing.T) {
 	var params map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(resp.Tools[0].Parameters, &params))
 	assert.JSONEq(t, `"object"`, string(params["type"]))
-	assert.JSONEq(t, `{}`, string(params["properties"]))
+	assert.JSONEq(t, `[]`, string(params["required"]))
 }

@@ -213,8 +213,44 @@ func TestApplyCodexOAuthTransform_NormalizeCodexTools_PreservesResponsesFunction
 
 	first, ok := tools[0].(map[string]any)
 	require.True(t, ok)
-	require.Equal(t, "function", first["type"])
-	require.Equal(t, "bash", first["name"])
+	params, ok := first["parameters"].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "object", params["type"])
+	require.Equal(t, map[string]any{}, params["properties"])
+	require.Equal(t, []string{}, params["required"])
+}
+
+func TestApplyCodexOAuthTransform_NormalizeCodexTools_AddsMissingRequiredProperties(t *testing.T) {
+	reqBody := map[string]any{
+		"model": "gpt-5.1",
+		"tools": []any{
+			map[string]any{
+				"type":        "function",
+				"name":        "search_content",
+				"description": "desc",
+				"parameters": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"query":         map[string]any{"type": "string"},
+						"caseSensitive": map[string]any{"type": "boolean"},
+					},
+					"required": []any{"query"},
+				},
+			},
+		},
+	}
+
+	applyCodexOAuthTransform(reqBody, false, false)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	require.Len(t, tools, 1)
+
+	first, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	params, ok := first["parameters"].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, []string{"caseSensitive", "query"}, params["required"])
 }
 
 func TestApplyCodexOAuthTransform_EmptyInput(t *testing.T) {

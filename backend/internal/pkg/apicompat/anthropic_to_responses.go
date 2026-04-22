@@ -3,6 +3,7 @@ package apicompat
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -418,14 +419,15 @@ func convertAnthropicToolsToResponses(tools []AnthropicTool) []ResponsesTool {
 }
 
 // normalizeToolParameters ensures the tool parameter schema is valid for
-// OpenAI's Responses API, which requires "properties" on object schemas.
+// OpenAI-compatible Responses/Codex upstreams.
 //
-//   - nil/empty → {"type":"object","properties":{}}
+//   - nil/empty → {"type":"object","properties":{},"required":[]}
 //   - type=object without properties → adds "properties": {}
+//   - type=object → ensures "required" exists and includes every property key
 //   - otherwise → returned unchanged
 func normalizeToolParameters(schema json.RawMessage) json.RawMessage {
 	if len(schema) == 0 || string(schema) == "null" {
-		return json.RawMessage(`{"type":"object","properties":{}}`)
+		return json.RawMessage(`{"type":"object","properties":{},"required":[]}`)
 	}
 
 	var m map[string]json.RawMessage
@@ -438,11 +440,44 @@ func normalizeToolParameters(schema json.RawMessage) json.RawMessage {
 		return schema
 	}
 
-	if _, ok := m["properties"]; ok {
-		return schema
+	propertyNames := make([]string, 0)
+	if rawProperties, ok := m["properties"]; ok && len(rawProperties) > 0 && string(rawProperties) != "null" {
+		var properties map[string]json.RawMessage
+		if err := json.Unmarshal(rawProperties, &properties); err == nil {
+			for name := range properties {
+				propertyNames = append(propertyNames, name)
+			}
+			sort.Strings(propertyNames)
+		}
+	} else {
+		m["properties"] = json.RawMessage(`{}`)
 	}
 
-	m["properties"] = json.RawMessage(`{}`)
+	requiredSet := make(map[string]struct{}, len(propertyNames))
+	for _, name := range propertyNames {
+		requiredSet[name] = struct{}{}
+	}
+	if rawRequired, ok := m["required"]; ok && len(rawRequired) > 0 && string(rawRequired) != "null" {
+		var existing []string
+		if err := json.Unmarshal(rawRequired, &existing); err == nil {
+			for _, name := range existing {
+				requiredSet[name] = struct{}{}
+			}
+		}
+	}
+
+	required := make([]string, 0, len(requiredSet))
+	for name := range requiredSet {
+		required = append(required, name)
+	}
+	sort.Strings(required)
+
+	requiredJSON, err := json.Marshal(required)
+	if err != nil {
+		return schema
+	}
+	m["required"] = requiredJSON
+
 	out, err := json.Marshal(m)
 	if err != nil {
 		return schema

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -492,6 +493,9 @@ func normalizeCodexTools(reqBody map[string]any) bool {
 
 		// OpenAI Responses-style tools use top-level name/parameters.
 		if name, ok := toolMap["name"].(string); ok && strings.TrimSpace(name) != "" {
+			if normalizeCodexToolParametersInMap(toolMap) {
+				modified = true
+			}
 			validTools = append(validTools, toolMap)
 			continue
 		}
@@ -529,6 +533,9 @@ func normalizeCodexTools(reqBody map[string]any) bool {
 				modified = true
 			}
 		}
+		if normalizeCodexToolParametersInMap(toolMap) {
+			modified = true
+		}
 
 		validTools = append(validTools, toolMap)
 	}
@@ -538,4 +545,71 @@ func normalizeCodexTools(reqBody map[string]any) bool {
 	}
 
 	return modified
+}
+
+func normalizeCodexToolParametersInMap(toolMap map[string]any) bool {
+	params, ok := toolMap["parameters"].(map[string]any)
+	if !ok || params == nil {
+		return false
+	}
+
+	typ, _ := params["type"].(string)
+	if strings.TrimSpace(typ) != "object" {
+		return false
+	}
+
+	modified := false
+	properties, ok := params["properties"].(map[string]any)
+	if !ok || properties == nil {
+		properties = map[string]any{}
+		params["properties"] = properties
+		modified = true
+	}
+
+	requiredSet := make(map[string]struct{}, len(properties))
+	for name := range properties {
+		requiredSet[name] = struct{}{}
+	}
+
+	if existing, ok := params["required"].([]any); ok {
+		for _, item := range existing {
+			if name, ok := item.(string); ok && strings.TrimSpace(name) != "" {
+				requiredSet[name] = struct{}{}
+			}
+		}
+	} else if existing, ok := params["required"].([]string); ok {
+		for _, name := range existing {
+			if strings.TrimSpace(name) != "" {
+				requiredSet[name] = struct{}{}
+			}
+		}
+	} else if _, exists := params["required"]; !exists || params["required"] == nil {
+		modified = true
+	}
+
+	required := make([]string, 0, len(requiredSet))
+	for name := range requiredSet {
+		required = append(required, name)
+	}
+	sort.Strings(required)
+
+	current, ok := params["required"].([]string)
+	if !ok || !sameStringSlice(current, required) {
+		params["required"] = required
+		modified = true
+	}
+
+	return modified
+}
+
+func sameStringSlice(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
