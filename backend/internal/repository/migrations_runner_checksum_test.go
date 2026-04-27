@@ -52,49 +52,76 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.False(t, ok)
 	})
 
-	t.Run("109历史checksum可兼容", func(t *testing.T) {
-		ok := isMigrationChecksumCompatible(
-			"109_auth_identity_compat_backfill.sql",
+	t.Run("109多个历史checksum都可兼容当前版本", func(t *testing.T) {
+		for _, dbChecksum := range []string{
 			"551e498aa5616d2d91096e9d72cf9fb36e418ee22eacc557f8811cadbc9e20ee",
 			"0580b4602d85435edf9aca1633db580bb3932f26517f75134106f80275ec2ace",
-		)
-		require.True(t, ok)
+			"748ddcdc60f93a1ac562ce8a66ee870f64ee594bf6dbedad55ed8baf3c75b28c",
+		} {
+			ok := isMigrationChecksumCompatible(
+				"109_auth_identity_compat_backfill.sql",
+				dbChecksum,
+				"2b380305e73ff0c13aa8c811e45897f2b36ca4a438f7b3e8f98e19ecb6bae0b3",
+			)
+			require.True(t, ok)
+		}
 	})
 
 	t.Run("109当前checksum可兼容历史checksum", func(t *testing.T) {
-		ok := isMigrationChecksumCompatible(
-			"109_auth_identity_compat_backfill.sql",
+		for _, fileChecksum := range []string{
 			"551e498aa5616d2d91096e9d72cf9fb36e418ee22eacc557f8811cadbc9e20ee",
 			"0580b4602d85435edf9aca1633db580bb3932f26517f75134106f80275ec2ace",
-		)
-		require.True(t, ok)
+		} {
+			ok := isMigrationChecksumCompatible(
+				"109_auth_identity_compat_backfill.sql",
+				"2b380305e73ff0c13aa8c811e45897f2b36ca4a438f7b3e8f98e19ecb6bae0b3",
+				fileChecksum,
+			)
+			require.True(t, ok)
+		}
 	})
 
-	t.Run("109回滚到历史文件后仍兼容已应用的新checksum", func(t *testing.T) {
-		ok := isMigrationChecksumCompatible(
-			"109_auth_identity_compat_backfill.sql",
-			"0580b4602d85435edf9aca1633db580bb3932f26517f75134106f80275ec2ace",
-			"551e498aa5616d2d91096e9d72cf9fb36e418ee22eacc557f8811cadbc9e20ee",
-		)
-		require.True(t, ok)
-	})
-
-	t.Run("110历史checksum可兼容", func(t *testing.T) {
-		ok := isMigrationChecksumCompatible(
-			"110_pending_auth_and_provider_default_grants.sql",
+	t.Run("110多个历史checksum都可兼容当前版本", func(t *testing.T) {
+		for _, dbChecksum := range []string{
 			"e3d1f433be2b564cfbdc549adf98fce13c5c7b363ebc20fd05b765d0563b0925",
 			"32cf87ee787b1bb36b5c691367c96eee37518fa3eed6f3322cf68795e3745279",
-		)
-		require.True(t, ok)
+			"301e90405b3424967b7d1931568b7a244902148fa82802f362c115ae4e2ae2ef",
+		} {
+			ok := isMigrationChecksumCompatible(
+				"110_pending_auth_and_provider_default_grants.sql",
+				dbChecksum,
+				"57a196a9810fb478fa001dfff110f5c76a7d87fb04f15e12e513fcb75402d7a6",
+			)
+			require.True(t, ok)
+		}
 	})
 
-	t.Run("112历史checksum可兼容", func(t *testing.T) {
-		ok := isMigrationChecksumCompatible(
-			"112_add_payment_order_provider_key_snapshot.sql",
+	t.Run("110当前checksum可兼容历史checksum", func(t *testing.T) {
+		for _, fileChecksum := range []string{
+			"e3d1f433be2b564cfbdc549adf98fce13c5c7b363ebc20fd05b765d0563b0925",
+			"32cf87ee787b1bb36b5c691367c96eee37518fa3eed6f3322cf68795e3745279",
+		} {
+			ok := isMigrationChecksumCompatible(
+				"110_pending_auth_and_provider_default_grants.sql",
+				"57a196a9810fb478fa001dfff110f5c76a7d87fb04f15e12e513fcb75402d7a6",
+				fileChecksum,
+			)
+			require.True(t, ok)
+		}
+	})
+
+	t.Run("112多个历史checksum都可兼容当前版本", func(t *testing.T) {
+		for _, dbChecksum := range []string{
 			"ffd3e8a2c9295fa9cbefefd629a78268877e5b51bc970a82d9b3f46ec4ebd15e",
-			"b75f8f56d39455682787696a3d92ad25b055444ca328fb7fca9a460a15d68d99",
-		)
-		require.True(t, ok)
+			"d4476c67ceea871aa2d92ee2a603795a742d0379a58cf53938bb9aa559ff9caa",
+		} {
+			ok := isMigrationChecksumCompatible(
+				"112_add_payment_order_provider_key_snapshot.sql",
+				dbChecksum,
+				"b75f8f56d39455682787696a3d92ad25b055444ca328fb7fca9a460a15d68d99",
+			)
+			require.True(t, ok)
+		}
 	})
 
 	t.Run("115历史checksum可兼容修复后的legacy external backfill", func(t *testing.T) {
@@ -128,6 +155,7 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		for _, dbChecksum := range []string{
 			"a38243ca0a72c3a01c0a92b7986423054d6133c0399441f853b99802852720fb",
 			"e0cdf835d6c688d64100f483d31bc02ac9ebad414bf1837af239a84bf75b8227",
+			"6395ad255f2be2219ad85813b72db6fa7783c81d747e42e098847ef3594f1674",
 		} {
 			ok := isMigrationChecksumCompatible(
 				"118_wechat_dual_mode_and_auth_source_defaults.sql",

@@ -16,7 +16,7 @@ services:
   # Sub2API Application
   # ===========================================================================
   sub2api:
-    image: xiechenghua/sub2api:latest
+    image: xiechenghua/sub2api:1.1.119
     container_name: sub2api
     restart: unless-stopped
     ulimits:
