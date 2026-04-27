@@ -118,7 +118,7 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 			ok := isMigrationChecksumCompatible(
 				"112_add_payment_order_provider_key_snapshot.sql",
 				dbChecksum,
-				"b75f8f56d39455682787696a3d92ad25b055444ca328fb7fca9a460a15d68d99",
+				"ab871fc02da1eabe0de6ca74a119ee3cea9c727caed30af2ae07a0cd1176d1b8",
 			)
 			require.True(t, ok)
 		}
@@ -160,13 +160,23 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 			ok := isMigrationChecksumCompatible(
 				"118_wechat_dual_mode_and_auth_source_defaults.sql",
 				dbChecksum,
-				"b54194d7a3e4fbf710e0a3590d22a2fe7966804c487052a356e0b55f53ef96b0",
+				"ed272e0840730b6b8e7838513c4cc8817e8b5e488e27c88b5421adbece5e89c9",
 			)
 			require.True(t, ok)
 		}
 	})
 
+	t.Run("123历史checksum可兼容当前版本", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"123_fix_legacy_auth_source_grant_on_signup_defaults.sql",
+			"6cd33422f215dcd1f486ab6f35c0ea5805d9ca69bb25906d94bc649156657145",
+			"7faba5ef65051b7ecb215b7fd2351b0828b7c48153ec688ac089c1588d2cde41",
+		)
+		require.True(t, ok)
+	})
+
 	t.Run("120多个历史checksum都可兼容新的notx修复版本", func(t *testing.T) {
+
 		for _, dbChecksum := range []string{
 			"e77921f79d539bc24575cb9c16cbe566d2b23ce816190343d0a7568f6a3fcf61",
 			"707431450603e70a43ce9fbd61e0c12fa67da4875158ccefabacea069587ab22",
